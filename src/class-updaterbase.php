@@ -67,7 +67,7 @@ class UpdaterBase {
 			$upgrade_theme_folder = $remote_source . "/$slug";
 			$wp_filesystem->mkdir( $upgrade_theme_folder );
 
-			// Copy files from $source in new $upgrade_theme_folder
+			// Copy files from $source in new $upgrade_theme_folder.
 			copy_dir( $source, $upgrade_theme_folder );
 
 			// Remove the old $source directory.

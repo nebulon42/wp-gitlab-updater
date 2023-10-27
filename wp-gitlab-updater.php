@@ -30,10 +30,10 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Include classes.
-require_once 'src/updater-base.php';
-require_once 'src/settings.php';
-require_once 'src/plugin-updater.php';
-require_once 'src/theme-updater.php';
+require_once 'src/class-updaterbase.php';
+require_once 'src/class-settings.php';
+require_once 'src/class-pluginupdater.php';
+require_once 'src/class-themeupdater.php';
 
 // Init plugin.
 new UpdaterBase();

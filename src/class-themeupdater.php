@@ -20,7 +20,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Include UpdaterBase class.
  */
-require_once 'updater-base.php';
+require_once 'class-updaterbase.php';
 
 /**
  * Class ThemeUpdater
@@ -35,7 +35,7 @@ class ThemeUpdater extends UpdaterBase {
 	 *
 	 * @var array
 	 */
-	protected $theme_data = [];
+	protected $theme_data = array();
 
 	/**
 	 * ThemeUpdater constructor.
@@ -50,9 +50,9 @@ class ThemeUpdater extends UpdaterBase {
 	 *                                       For example: username/repo or group/repo
 	 * }
 	 */
-	public function __construct( $args = [] ) {
+	public function __construct( $args = array() ) {
 		// Set theme data.
-		$theme_data = ( is_multisite() ? (array) get_site_option( "wp-gitlab-updater-themes" ) : (array) get_option( "wp-gitlab-updater-themes" ) );
+		$theme_data = ( is_multisite() ? (array) get_site_option( 'wp-gitlab-updater-themes' ) : (array) get_option( 'wp-gitlab-updater-themes' ) );
 		if ( false !== $theme_data && false !== $theme_data[0] ) {
 			$this->theme_data = $theme_data;
 		}
@@ -60,12 +60,12 @@ class ThemeUpdater extends UpdaterBase {
 		// Check if we have values.
 		if ( isset( $args['slug'] ) && isset( $args['access_token'] ) && isset( $args['gitlab_url'] ) && isset( $args['repo'] ) ) {
 			// Create array to insert them into theme_data.
-			$tmp_array = [
+			$tmp_array = array(
 				'settings-array-key' => $args['slug'],
 				'access-token'       => $args['access_token'],
 				'gitlab-url'         => untrailingslashit( $args['gitlab_url'] ),
 				'repo'               => str_replace( '/', '%2F', $args['repo'] ),
-			];
+			);
 
 			// Insert it.
 			$this->theme_data[ $args['slug'] ] = $tmp_array;
@@ -75,11 +75,14 @@ class ThemeUpdater extends UpdaterBase {
 		 * Hook into pre_set_site_transient_update_themes to modify the update_themes
 		 * transient if a new theme version is available.
 		 */
-		add_filter( 'pre_set_site_transient_update_themes', function ( $transient ) {
-			$transient = $this->theme_update( $transient );
+		add_filter(
+			'pre_set_site_transient_update_themes',
+			function ( $transient ) {
+				$transient = $this->theme_update( $transient );
 
-			return $transient;
-		} );
+				return $transient;
+			}
+		);
 
 		/**
 		 * Check for themes with the same slug (for example from W.org) and remove
@@ -88,28 +91,31 @@ class ThemeUpdater extends UpdaterBase {
 		 * For whatever reason, it seems to be working better here in an anonymous function
 		 * rather than in a method…
 		 */
-		add_filter( 'site_transient_update_themes', function ( $transient ) {
-			if ( empty ( $transient->response ) ) {
+		add_filter(
+			'site_transient_update_themes',
+			function ( $transient ) {
+				if ( empty( $transient->response ) ) {
+					return $transient;
+				}
+
+				// Check if we have an update for a theme with the same slug from W.org
+				// and remove it.
+				//
+				// At first, we loop the GitLab updater themes.
+				foreach ( $this->theme_data as $theme ) {
+					$theme_slug = $theme['settings-array-key'];
+
+					// Check if we have a theme with the same slug and another package URL
+					// than our GitLab URL.
+					if ( array_key_exists( $theme_slug, $transient->response ) && false === strpos( $transient->response[ $theme_slug ]['package'], $theme['gitlab-url'] ) ) {
+						// Unset the response key for that theme.
+						unset( $transient->response[ $theme_slug ] );
+					}
+				}
+
 				return $transient;
 			}
-
-			// Check if we have an update for a theme with the same slug from W.org
-			// and remove it.
-			//
-			// At first, we loop the GitLab updater themes.
-			foreach ( $this->theme_data as $theme ) {
-				$theme_slug = $theme['settings-array-key'];
-
-				// Check if we have a theme with the same slug and another package URL
-				// than our GitLab URL.
-				if ( array_key_exists( $theme_slug, $transient->response ) && false === strpos( $transient->response[ $theme_slug ]['package'], $theme['gitlab-url'] ) ) {
-					// Unset the response key for that theme.
-					unset( $transient->response[ $theme_slug ] );
-				}
-			}
-
-			return $transient;
-		} );
+		);
 
 		/**
 		 * Before the files are copied to wp-content/themes, we need to rename the
@@ -119,16 +125,21 @@ class ThemeUpdater extends UpdaterBase {
 		 * is something with the project name, the tag number and the commit SHA
 		 * (so everything but matching the theme slug).
 		 */
-		add_filter( 'upgrader_source_selection', function ( $source, $remote_source, $wp_upgrader, $args ) {
-			foreach ( $this->theme_data as $theme ) {
-				// Check if the currently updated theme matches our theme slug.
-				if ( $args['theme'] === $theme['settings-array-key'] && false !== $theme ) {
-					$source = $this->filter_source_name( $source, $remote_source, $theme['settings-array-key'] );
+		add_filter(
+			'upgrader_source_selection',
+			function ( $source, $remote_source, $wp_upgrader, $args ) {
+				foreach ( $this->theme_data as $theme ) {
+					// Check if the currently updated theme matches our theme slug.
+					if ( $args['theme'] === $theme['settings-array-key'] && false !== $theme ) {
+						$source = $this->filter_source_name( $source, $remote_source, $theme['settings-array-key'] );
+					}
 				}
-			}
 
-			return $source;
-		}, 10, 4 );
+				return $source;
+			},
+			10,
+			4
+		);
 	}
 
 	/**
@@ -178,7 +189,7 @@ class ThemeUpdater extends UpdaterBase {
 			if ( ! isset( $transient->checked[ $theme['settings-array-key'] ] ) ) {
 				continue;
 			}
-			
+
 			if ( version_compare( $transient->checked[ $theme['settings-array-key'] ], $latest_version, '<' ) ) {
 				// Get the package URL.
 				$theme_package = "$gitlab_url/api/v4/projects/$repo/repository/archive.zip?sha=$latest_version&private_token=$access_token";
