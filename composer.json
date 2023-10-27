@@ -1,0 +1,26 @@
+{
+    "name": "nebulon42/wp-gitlab-updater",
+    "type": "wordpress-plugin",
+    "description": "Allows to update WordPress plugins hosted on GitLab.",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://wpackagist.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.4",
+        "johnpbloch/wordpress": "~5.3"
+    },
+    "require-dev" : {
+        "wp-cli/wp-cli-bundle": "~2.8",
+        "wp-coding-standards/wpcs": "^3.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "cweagans/composer-patches": true,
+            "johnpbloch/wordpress-core-installer": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
