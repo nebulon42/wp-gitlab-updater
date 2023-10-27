@@ -74,7 +74,7 @@ class UpdaterBase {
 			$wp_filesystem->delete( $source, true );
 
 			// Set new folder as $source.
-			$source = $upgrade_theme_folder;
+			$source = $upgrade_theme_folder . '/';
 		}
 
 		return $source;
